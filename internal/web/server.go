@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mime"
 	"net"
 	"net/http"
 	"os"
@@ -34,8 +35,10 @@ const (
 	maxBody    = 8 << 20
 )
 
-const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+const csp = "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; " +
 	"connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+
+func init() { mime.AddExtensionType(".woff2", "font/woff2") }
 
 // Server is one local web UI session.
 type Server struct {

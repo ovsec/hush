@@ -154,7 +154,8 @@ function activityPanel() {
   return h('section', { class: 'activity' + (open ? '' : ' closed'), 'aria-label': 'activity' },
     h('header', null,
       h('span', { class: 'dot' }),
-      h('span', null, 'activity · what hush is doing, as it happens'),
+      h('span', { class: 'label' }, 'activity'),
+      h('span', { class: 'tiny' }, 'what hush is doing, as it happens'),
       h('span', { class: 'spacer' }),
       !always && h('button', { class: 'btn ghost small', onclick: () => { S.activity = !S.activity; render(); } }, open ? 'hide' : 'show'),
     ),
@@ -253,9 +254,9 @@ function renderSteps() {
   }
   let current = true;
   ul.replaceChildren(
-    h('li', { class: 'title' }, h('span', { class: 'n' }, ''), h('span', { class: 'eyebrow' }, 'what happens when you unlock')),
+    h('li', { class: 'title' }, h('span', { class: 'eyebrow' }, 'what happens when you unlock')),
     ...UNLOCK_STEPS.map(([kind, text], i) => {
-      let cls = '', mark = String(i + 1);
+      let cls = '', mark = String(i + 1).padStart(2, '0');
       if (seen.has(kind)) { cls = 'done'; mark = '✓'; }
       else if (current && S.busy) { cls = 'cur'; mark = '•'; current = false; }
       else if (current && failed) { cls = 'fail'; mark = '✕'; current = false; }
@@ -325,7 +326,7 @@ function renderList() {
   list.replaceChildren(...items.map((it) =>
     h('button', { class: 'row' + (it.id === S.sel ? ' sel' : ''), 'aria-label': it.title, 'aria-current': it.id === S.sel ? 'true' : null, onclick: () => select(it.id) },
       h('span', { class: 't' }, it.title),
-      it.exposed && it.exposed.length && h('span', { class: 'flag', title: 'a removed member could read this' }, '!'),
+      it.exposed?.length > 0 && h('span', { class: 'flag', title: 'a removed member could read this' }, '!'),
       h('span', { class: 'u' }, it.username))));
 }
 
@@ -375,11 +376,11 @@ function renderDetail() {
     ? h('a', { class: 'value', href: it.url, target: '_blank', rel: 'noopener noreferrer' }, it.url)
     : h('span', { class: 'value' }, it.url);
 
-  pane.replaceChildren(
+  pane.replaceChildren(...visibleKids(
     h('button', { class: 'btn ghost small back', onclick: back }, '← All secrets'),
     h('h1', null, it.title),
     h('div', { class: 'meta' }, `v${it.version} · updated ${ago(it.updated)} by ${it.author}`),
-    it.exposed && it.exposed.length && h('div', { class: 'warn' },
+    it.exposed?.length > 0 && h('div', { class: 'warn' },
       `${it.exposed.join(', ')} could read this value before being removed. Change it at the source, then edit and save it here.`),
     h('div', { class: 'fields' },
       h('span', { class: 'label' }, 'username'), h('span', { class: 'value' }, it.username),
@@ -410,8 +411,11 @@ function renderDetail() {
         h('dt', null, 'cipher'), h('dd', null, `xchacha20-poly1305 · epoch ${it.epoch} key`),
         h('dt', null, 'size'), h('dd', null, `${it.size} B ciphertext`),
         h('dt', null, 'in memory'), h('dd', null, open ? 'decrypted until you pick another secret' : 'only title, username and url'))),
-  );
+  ));
 }
+
+// visibleKids drops the false/null that conditional children leave behind.
+const visibleKids = (...kids) => kids.filter((k) => k != null && k !== false && k !== '');
 
 async function remove(it) {
   await api('DELETE', `/api/items/${encodeURIComponent(it.id)}`);
@@ -504,6 +508,7 @@ function editor() {
       h('div', { class: 'actions' },
         h('button', { class: 'btn primary', type: 'submit' }, 'Save'),
         h('button', { class: 'btn ghost', type: 'button', onclick: () => { S.editing = null; if (!S.sel) back(); else renderDetail(); } }, 'Cancel'))),
+    h('p', { class: 'eyebrow', style: null }, 'what happens when you save'),
     h('ol', { class: 'how' },
       h('li', null, 'your fields become json, in memory only'),
       h('li', null, `encrypted with the epoch ${S.info.epoch} vault key · xchacha20-poly1305 · fresh nonce`),

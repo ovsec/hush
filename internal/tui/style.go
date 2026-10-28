@@ -8,25 +8,29 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// One accent, one secondary, and greys. Adaptive for light and dark terminals.
+// minimal-tech: ink, muted, line-strong, line; one rose accent for human
+// decisions and cyan only for system signals. Adaptive for light and dark.
 var (
-	cAccent = lipgloss.AdaptiveColor{Light: "#C2185B", Dark: "#F38BA8"}
-	cCyan   = lipgloss.AdaptiveColor{Light: "#00838F", Dark: "#89DCEB"}
-	cText   = lipgloss.AdaptiveColor{Light: "#24292F", Dark: "#E6E6E6"}
-	cMuted  = lipgloss.AdaptiveColor{Light: "#6E7781", Dark: "#8B8B8B"}
-	cFaint  = lipgloss.AdaptiveColor{Light: "#AFB8C1", Dark: "#4A4A4A"}
-	cDanger = lipgloss.AdaptiveColor{Light: "#CF222E", Dark: "#FF7B72"}
+	cAccent = lipgloss.AdaptiveColor{Light: "#E11D48", Dark: "#FB7185"}
+	cCyan   = lipgloss.AdaptiveColor{Light: "#0D9488", Dark: "#2DD4BF"}
+	cText   = lipgloss.AdaptiveColor{Light: "#18181B", Dark: "#F4F4F8"}
+	cMuted  = lipgloss.AdaptiveColor{Light: "#5F5F6B", Dark: "#A1A1B5"}
+	cFaint  = lipgloss.AdaptiveColor{Light: "#8B8B8D", Dark: "#838386"}
+	cLine   = lipgloss.AdaptiveColor{Light: "#D1D1D3", Dark: "#3B3B3E"}
+	cDanger = cAccent // warnings are human decisions: same rose
 )
 
 var (
-	sText   = lipgloss.NewStyle().Foreground(cText)
-	sBold   = lipgloss.NewStyle().Foreground(cText).Bold(true)
-	sMuted  = lipgloss.NewStyle().Foreground(cMuted)
-	sFaint  = lipgloss.NewStyle().Foreground(cFaint)
-	sAccent = lipgloss.NewStyle().Foreground(cAccent)
-	sBrand  = lipgloss.NewStyle().Foreground(cAccent).Bold(true)
-	sCyan   = lipgloss.NewStyle().Foreground(cCyan)
-	sDanger = lipgloss.NewStyle().Foreground(cDanger)
+	sText    = lipgloss.NewStyle().Foreground(cText)
+	sBold    = lipgloss.NewStyle().Foreground(cText).Bold(true)
+	sMuted   = lipgloss.NewStyle().Foreground(cMuted)
+	sFaint   = lipgloss.NewStyle().Foreground(cFaint)
+	sLine    = lipgloss.NewStyle().Foreground(cLine)
+	sEyebrow = lipgloss.NewStyle().Foreground(cMuted).Bold(true)
+	sAccent  = lipgloss.NewStyle().Foreground(cAccent)
+	sBrand   = lipgloss.NewStyle().Foreground(cAccent).Bold(true)
+	sCyan    = lipgloss.NewStyle().Foreground(cCyan)
+	sDanger  = lipgloss.NewStyle().Foreground(cDanger)
 )
 
 func trunc(s string, n int) string {
@@ -60,9 +64,10 @@ func pad(s string, w int) string {
 	return s
 }
 
+// rule is a section eyebrow: UPPERCASE, then a hairline.
 func rule(label string, w int) string {
-	l := sMuted.Render(label) + " "
-	return l + sFaint.Render(strings.Repeat("─", max(0, w-lipgloss.Width(l))))
+	l := sEyebrow.Render(strings.ToUpper(label)) + "  "
+	return l + sLine.Render(strings.Repeat("─", max(0, w-lipgloss.Width(l))))
 }
 
 func keys(pairs ...string) string {
@@ -70,7 +75,7 @@ func keys(pairs ...string) string {
 	for i := 0; i+1 < len(pairs); i += 2 {
 		parts = append(parts, sText.Render(pairs[i])+" "+sMuted.Render(pairs[i+1]))
 	}
-	return strings.Join(parts, sFaint.Render("  ·  "))
+	return strings.Join(parts, sLine.Render("  ·  "))
 }
 
 func ago(t time.Time) string {

@@ -709,7 +709,7 @@ func (m Model) header(w int) string {
 	case scrJoin, scrPending:
 		name = "joining a team"
 	}
-	left := sBrand.Render("hush") + sFaint.Render("  /  ") + sText.Render(trunc(name, w/2))
+	left := sAccent.Render("●") + " " + sBold.Render("hush") + sLine.Render("  /  ") + sText.Render(trunc(name, w/2))
 	var right string
 	if m.svc.Unlocked() {
 		right = sCyan.Render("● unlocked") + sMuted.Render(fmt.Sprintf("  %d secrets", len(m.items)))
@@ -781,10 +781,10 @@ func (m Model) steps(w int, title string, items [][2]string) string {
 			}
 		}
 	}
-	lines := []string{sMuted.Render(title)}
+	lines := []string{rule(title, w), ""}
 	current := true
 	for i, it := range items {
-		mark := sFaint.Render(fmt.Sprintf("%d", i+1))
+		mark := sFaint.Render(fmt.Sprintf("%02d", i+1))
 		style := sMuted
 		switch {
 		case seen[it[0]]:
@@ -794,7 +794,7 @@ func (m Model) steps(w int, title string, items [][2]string) string {
 		case current && failed:
 			mark, current = sDanger.Render("✕"), false
 		}
-		lines = append(lines, "  "+mark+"  "+style.Render(trunc(it[1], w-5)))
+		lines = append(lines, pad(mark, 2)+"  "+style.Render(trunc(it[1], w-5)))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -842,7 +842,7 @@ func (m Model) viewUnlock(w int) string {
 func (m Model) viewMain(w, ch int) string {
 	lw := max(22, min(38, w*2/5))
 	dw := max(10, w-lw-3)
-	sep := sFaint.Render(strings.TrimSuffix(strings.Repeat("│\n", ch), "\n"))
+	sep := sLine.Render(strings.TrimSuffix(strings.Repeat("│\n", ch), "\n"))
 	left := lipgloss.NewStyle().Width(lw).Height(ch).Render(m.viewList(lw, ch))
 	right := lipgloss.NewStyle().Width(dw).Height(ch).MaxHeight(ch).Render(m.viewDetail(dw))
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, " ", sep, " ", right)
@@ -982,11 +982,12 @@ func (m Model) viewEdit(w int) string {
 		m.fieldRow("url", 3, ""),
 		m.fieldRow("notes", 4, ""),
 		"",
-		sMuted.Render("what happens when you save"),
-		sFaint.Render(clip("  1  your fields become json, in memory only", w)),
-		sFaint.Render(clip(fmt.Sprintf("  2  encrypted with the epoch %d vault key · xchacha20-poly1305 · fresh nonce", m.info.Epoch), w)),
-		sFaint.Render(clip("  3  wrapped in a secret.put op and signed with your ed25519 key", w)),
-		sFaint.Render(clip("  4  appended to ops.jsonl and fsynced; plaintext never touches disk", w)),
+		rule("what happens when you save", w),
+		"",
+		sAccent.Render("01") + "  " + sMuted.Render(clip("your fields become json, in memory only", w-4)),
+		sAccent.Render("02") + "  " + sMuted.Render(clip(fmt.Sprintf("encrypted with the epoch %d vault key · xchacha20-poly1305 · fresh nonce", m.info.Epoch), w-4)),
+		sAccent.Render("03") + "  " + sMuted.Render(clip("wrapped in a secret.put op and signed with your ed25519 key", w-4)),
+		sAccent.Render("04") + "  " + sMuted.Render(clip("appended to ops.jsonl and fsynced; plaintext never touches disk", w-4)),
 	}, "\n")
 }
 
