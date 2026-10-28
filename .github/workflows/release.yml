@@ -1,0 +1,89 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write      # create the release
+  id-token: write      # sign build provenance
+  attestations: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - linux/amd64
+          - linux/arm64
+          - darwin/amd64
+          - darwin/arm64
+          - windows/amd64
+          - windows/arm64
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: build
+        env:
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ github.ref_name }}
+          CGO_ENABLED: "0"
+        run: |
+          export GOOS="${TARGET%/*}" GOARCH="${TARGET#*/}"
+          name="hush_${VERSION#v}_${GOOS}_${GOARCH}"
+          ext=""; [ "$GOOS" = windows ] && ext=".exe"
+          mkdir -p "dist/$name"
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o "dist/$name/hush$ext" ./cmd/hush
+          cp LICENSE README.md "dist/$name/"
+          cd dist
+          if [ "$GOOS" = windows ]; then zip -qr "$name.zip" "$name"; else tar -czf "$name.tar.gz" "$name"; fi
+          rm -rf "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ strategy.job-index }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist
+          merge-multiple: true
+      - name: checksums
+        run: cd dist && sha256sum * > checksums.txt && cat checksums.txt
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "hush $TAG" --generate-notes --notes "$(cat <<'NOTES'
+          Prebuilt, static binaries for macOS, Linux and Windows (amd64 and arm64).
+
+          **Verify** a download against `checksums.txt` (`sha256sum -c checksums.txt --ignore-missing`), and check its signed build provenance with:
+
+          ```
+          gh attestation verify <file> --repo ovsec/hush
+          ```
+
+          hush has not been independently audited; see SECURITY.md.
+          NOTES
+          )"

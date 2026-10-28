@@ -6,6 +6,7 @@
 One binary. No server. Nothing hidden: hush shows you every key derivation, decryption, signature and disk write as it happens.
 
 [![CI](https://github.com/ovsec/hush/actions/workflows/ci.yml/badge.svg)](https://github.com/ovsec/hush/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ovsec/hush?sort=semver)](https://github.com/ovsec/hush/releases/latest)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ovsec/hush.svg)](https://pkg.go.dev/github.com/ovsec/hush)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ovsec/hush)](https://goreportcard.com/report/github.com/ovsec/hush)
 [![Go version](https://img.shields.io/github/go-mod/go-version/ovsec/hush)](go.mod)
@@ -50,11 +51,20 @@ activity ───────────────────────�
 
 ## Install
 
+**Prebuilt binaries** for macOS, Linux and Windows (amd64 and arm64) are on the [releases page](https://github.com/ovsec/hush/releases/latest). Each release has SHA-256 checksums and signed build provenance:
+
+```sh
+sha256sum -c checksums.txt --ignore-missing
+gh attestation verify hush_*_darwin_arm64.tar.gz --repo ovsec/hush
+```
+
+**With Go:**
+
 ```sh
 go install github.com/ovsec/hush/cmd/hush@latest
 ```
 
-Or build from source:
+**From source:**
 
 ```sh
 git clone https://github.com/ovsec/hush && cd hush
@@ -158,7 +168,8 @@ internal/sso     OIDC login and token verification; ssotest is a mock IdP
 - [x] Peer-to-peer sync with live presence
 - [x] OIDC identity binding
 - [ ] Join over the network (no first bundle), sync status page
-- [ ] Hardening: memguard, fuzzing, written threat model, signed releases
+- [x] Release binaries with checksums and signed build provenance
+- [ ] Hardening: memguard, fuzzing, written threat model
 - [ ] Independent security review
 
 ## Known limitations
